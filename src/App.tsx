@@ -173,6 +173,197 @@ function Nav({ activeSection }: { activeSection: string }) {
   )
 }
 
+/* ─── ARCHITECTURE DIAGRAM ─── */
+
+const ROUTES = [
+  {
+    method: 'GET',
+    path: '/auth/github',
+    color: 'bg-yellow-500',
+    textColor: 'text-yellow-400',
+    steps: [
+      { label: 'Client', icon: '🖥️', color: 'from-sky-500 to-sky-600' },
+      { label: 'GitHub OAuth', icon: '🔑', color: 'from-yellow-500 to-amber-600' },
+      { label: 'PKCE Verify', icon: '🛡️', color: 'from-orange-500 to-red-500' },
+      { label: 'Token Issue', icon: '🎫', color: 'from-green-500 to-emerald-600' },
+    ],
+  },
+  {
+    method: 'GET',
+    path: '/profiles',
+    color: 'bg-green-500',
+    textColor: 'text-green-400',
+    steps: [
+      { label: 'Client', icon: '🖥️', color: 'from-sky-500 to-sky-600' },
+      { label: 'Rate Limit', icon: '🚦', color: 'from-red-500 to-rose-600' },
+      { label: 'Auth Check', icon: '🔐', color: 'from-yellow-500 to-amber-600' },
+      { label: 'Cache Check', icon: '⚡', color: 'from-purple-500 to-violet-600' },
+      { label: 'PostgreSQL', icon: '🐘', color: 'from-blue-500 to-indigo-600' },
+      { label: 'Response', icon: '📦', color: 'from-green-500 to-emerald-600' },
+    ],
+  },
+  {
+    method: 'GET',
+    path: '/profiles/search',
+    color: 'bg-blue-500',
+    textColor: 'text-blue-400',
+    steps: [
+      { label: 'Client', icon: '🖥️', color: 'from-sky-500 to-sky-600' },
+      { label: 'NL Parser', icon: '🧠', color: 'from-pink-500 to-fuchsia-600' },
+      { label: 'Canonicalize', icon: '🔄', color: 'from-orange-500 to-amber-600' },
+      { label: 'Cache Key', icon: '⚡', color: 'from-purple-500 to-violet-600' },
+      { label: 'PostgreSQL', icon: '🐘', color: 'from-blue-500 to-indigo-600' },
+      { label: 'Response', icon: '📦', color: 'from-green-500 to-emerald-600' },
+    ],
+  },
+  {
+    method: 'POST',
+    path: '/profiles/import',
+    color: 'bg-red-500',
+    textColor: 'text-red-400',
+    steps: [
+      { label: 'Client', icon: '🖥️', color: 'from-sky-500 to-sky-600' },
+      { label: 'Admin Check', icon: '👑', color: 'from-yellow-500 to-amber-600' },
+      { label: 'CSV Stream', icon: '📊', color: 'from-teal-500 to-cyan-600' },
+      { label: 'Chunk Insert', icon: '💾', color: 'from-indigo-500 to-blue-600' },
+      { label: 'Summary', icon: '📋', color: 'from-green-500 to-emerald-600' },
+    ],
+  },
+]
+
+function ArchitectureDiagram() {
+  const [activeRoute, setActiveRoute] = useState<number | null>(null)
+  const [animatingStep, setAnimatingStep] = useState(-1)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  const handleRouteClick = (index: number) => {
+    if (isAnimating) return
+    setActiveRoute(index)
+    setAnimatingStep(-1)
+    setIsAnimating(true)
+
+    const steps = ROUTES[index].steps
+    let step = 0
+    const interval = setInterval(() => {
+      setAnimatingStep(step)
+      step++
+      if (step >= steps.length) {
+        clearInterval(interval)
+        setTimeout(() => setIsAnimating(false), 600)
+      }
+    }, 400)
+  }
+
+  return (
+    <div className="bg-gray-900 dark:bg-black border-4 border-black dark:border-yellow-400 shadow-[6px_6px_0_0_#000] dark:shadow-[6px_6px_0_0_#facc15] overflow-hidden">
+      {/* Route selector tabs */}
+      <div className="flex flex-wrap border-b-4 border-black dark:border-yellow-400">
+        {ROUTES.map((route, i) => (
+          <button
+            key={i}
+            onClick={() => handleRouteClick(i)}
+            className={`flex-1 min-w-[140px] px-3 py-3 font-mono text-[10px] sm:text-xs font-bold transition-all duration-200 border-r-2 border-black dark:border-yellow-400 last:border-r-0 cursor-pointer ${
+              activeRoute === i
+                ? `${route.color} text-black scale-[1.02] shadow-inner`
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+            }`}
+          >
+            <span className={`${activeRoute === i ? 'text-black' : 'text-gray-600'} mr-1`}>{route.method}</span>
+            {route.path}
+          </button>
+        ))}
+      </div>
+
+      {/* Animated flow */}
+      <div className="p-4 sm:p-6 min-h-[200px]">
+        {activeRoute === null ? (
+          <div className="flex items-center justify-center h-[180px] text-gray-500 font-pixel text-[10px] sm:text-xs text-center">
+            <div>
+              <div className="text-4xl mb-4 animate-bounce">👆</div>
+              <p>Pick a route above to see<br />the request flow animate</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Flow nodes */}
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+              {ROUTES[activeRoute].steps.map((step, i) => {
+                const isActive = i <= animatingStep
+                const isCurrent = i === animatingStep
+                return (
+                  <div key={i} className="flex items-center gap-2 sm:gap-3">
+                    {/* Node */}
+                    <div
+                      className={`relative flex flex-col items-center transition-all duration-300 ${
+                        isActive ? 'scale-100 opacity-100' : 'scale-75 opacity-30'
+                      } ${isCurrent ? 'scale-110' : ''}`}
+                    >
+                      <div
+                        className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center border-3 border-black dark:border-white bg-gradient-to-br ${step.color} text-2xl sm:text-3xl shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#facc15] transition-all duration-300 ${
+                          isCurrent ? 'animate-bounce shadow-[6px_6px_0_0_#000] dark:shadow-[6px_6px_0_0_#facc15]' : ''
+                        }`}
+                      >
+                        {step.icon}
+                      </div>
+                      <span
+                        className={`mt-2 font-pixel text-[8px] sm:text-[10px] transition-all duration-300 ${
+                          isActive ? ROUTES[activeRoute].textColor : 'text-gray-600'
+                        } ${isCurrent ? 'scale-110' : ''}`}
+                      >
+                        {step.label}
+                      </span>
+                      {/* Pulse ring on current */}
+                      {isCurrent && (
+                        <div className="absolute inset-0 w-14 h-14 sm:w-16 sm:h-16 border-2 border-yellow-400 opacity-50 animate-ping" />
+                      )}
+                    </div>
+                    {/* Arrow between nodes */}
+                    {i < ROUTES[activeRoute].steps.length - 1 && (
+                      <div
+                        className={`text-xl sm:text-2xl font-bold transition-all duration-300 ${
+                          i < animatingStep ? ROUTES[activeRoute].textColor : 'text-gray-700'
+                        } ${i === animatingStep - 1 ? 'animate-pulse scale-125' : ''}`}
+                      >
+                        →
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Status bar */}
+            <div className="mt-4 border-t-2 border-gray-700 pt-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-3 bg-gray-800 border-2 border-gray-600 overflow-hidden">
+                  <div
+                    className={`h-full bg-gradient-to-r ${
+                      activeRoute === 0 ? 'from-yellow-400 to-amber-500'
+                        : activeRoute === 1 ? 'from-green-400 to-emerald-500'
+                        : activeRoute === 2 ? 'from-blue-400 to-indigo-500'
+                        : 'from-red-400 to-rose-500'
+                    } transition-all duration-500 ease-out`}
+                    style={{
+                      width: `${animatingStep >= 0 ? ((animatingStep + 1) / ROUTES[activeRoute].steps.length) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className="font-mono text-[10px] text-gray-400 min-w-[80px] text-right">
+                  {animatingStep >= 0
+                    ? animatingStep >= ROUTES[activeRoute].steps.length - 1
+                      ? '✅ 200 OK'
+                      : `⏳ Step ${animatingStep + 1}/${ROUTES[activeRoute].steps.length}`
+                    : '⏸ Ready'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /* ─── MAIN APP ─── */
 
 export default function App() {
@@ -432,29 +623,8 @@ export default function App() {
 
             <div className="mb-6">
               <h4 className="font-pixel text-xs text-blue-600 dark:text-blue-400 border-b-4 border-black dark:border-yellow-400 pb-1 mb-3">▸ Architecture &amp; Request Flow</h4>
-              <div className="bg-gray-900 dark:bg-black p-4 text-xs font-mono text-green-400 border-4 border-black dark:border-yellow-400 overflow-x-auto mb-3 shadow-[6px_6px_0_0_#000] dark:shadow-[6px_6px_0_0_#facc15]">
-                <pre className="whitespace-pre">{`Client (Web / CLI)
-  │
-  ├─ GET /auth/github ──────→ GitHub OAuth (PKCE)
-  │                            ↓
-  ├─ GET /auth/github/callback → Token issuance
-  │                               (access + refresh)
-  │
-  ├─ GET /profiles ──────────→ [rateLimit]
-  │                            → [auth] → [apiVersion]
-  │                            → Controller → queryCache
-  │                            → TypeORM (indexed PG)
-  │                            → X-Cache: MISS|HIT
-  │
-  ├─ GET /profiles/search ───→ parseNaturalLanguage()
-  │                            → canonicalizeQuery()
-  │                            → same cache path
-  │
-  └─ POST /profiles/import ──→ [admin only]
-                                → streaming CSV parser
-                                → chunked bulk INSERT
-                                → partial-failure summary`}</pre>
-              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">Click a route to trace the request through the system.</p>
+              <ArchitectureDiagram />
             </div>
 
             <div className="mb-6">
